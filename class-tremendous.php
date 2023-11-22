@@ -43,7 +43,7 @@ class Tremendous {
 			exit('Tremendous is not activated!');
 		}
 
-        $brand = ( new \WP_FoodTec\Includes\Libraries\Requests\Marketing\Brand )->request();
+        $brand = ( new Includes\Libraries\Requests\Marketing\Brand )->request();
 
         if ( sizeof( $brand->plans ) === 0 ) {
             return '';
@@ -52,13 +52,13 @@ class Tremendous {
 
         $params = array(
             'plan'         => $brand->plans[0],
-            'register_url' => ( new \WP_FoodTec\Includes\Libraries\Html_Helpers )->get_register_url(),
-            'recaptcha'     => ( new \WP_FoodTec\Includes\Libraries\Google_Recaptcha )->html( 'light' ),
+            'register_url' => ( new Includes\Libraries\Html_Helpers )->get_register_url(),
+            'recaptcha'     => ( new Includes\Libraries\Google_Recaptcha )->html( 'light' ),
             'nonce'         => wp_create_nonce( 'tremendous_request_nonce' ),
         );
 
-		if ( ( new \WP_FoodTec\Includes\Libraries\Auth_Service )->is_logged_in() ) {
-			$account = ( new \WP_FoodTec\Includes\Libraries\Requests\Marketing\Account )->request();
+		if ( ( new Includes\Libraries\Auth_Service )->is_logged_in() ) {
+			$account = ( new Includes\Libraries\Requests\Marketing\Account )->request();
 
 			if ($account) {
 				$params['account'] = $account;
@@ -68,7 +68,7 @@ class Tremendous {
 
 		$params['login_page'] = esc_url( get_page_link(absint( get_option( 'foodtec_login_page', '' ) )) );
 
-        return ( new \WP_FoodTec\Includes\Libraries\Template )->load( 'tremendous.php', $params );
+        return ( new Includes\Libraries\Template )->load( 'tremendous.php', $params );
 
 
 
@@ -90,12 +90,12 @@ class Tremendous {
             ),
         );
 
-        $params = ( new \WP_FoodTec\Includes\Libraries\Ajax_Validator )->validate( $ajax_options );
+        $params = ( new Includes\Libraries\Ajax_Validator )->validate( $ajax_options );
 		/**
 		* If not logged in stop the process.
 		*/
-		if ( ( new \WP_FoodTec\Includes\Libraries\Auth_Service )->is_logged_in() ) {
-			$account = (new \WP_FoodTec\Includes\Libraries\Requests\Marketing\Account)->request();
+		if ( ( new Includes\Libraries\Auth_Service )->is_logged_in() ) {
+			$account = (new Includes\Libraries\Requests\Marketing\Account)->request();
 
 			if ($account) {
 				$params['account'] = $account;
@@ -104,7 +104,7 @@ class Tremendous {
 			exit('Please login to redeem a card');
 		}
 
-        $brand = ( new \WP_FoodTec\Includes\Libraries\Requests\Marketing\Brand )->request();
+        $brand = ( new Includes\Libraries\Requests\Marketing\Brand )->request();
 
 		$plans = $brand->plans[0];
 		$chosenProduct = false;
@@ -118,7 +118,7 @@ class Tremendous {
 
 				$url = "$marketing_url/api/user/profile/loyalty/$thirdPartyAward->name/redeemThirdPartyAward";
 
-				$response = ( new \WP_FoodTec\Includes\Libraries\Requests\Request( 'Bearer ' . $_SESSION[ 'FOODTEC-' . get_current_blog_id() ]['ACCESS_TOKEN'], 'Authorization' ) )->request( $url, null, 'POST' );
+				$response = ( new Includes\Libraries\Requests\Request( 'Bearer ' . $_SESSION[ 'FOODTEC-' . get_current_blog_id() ]['ACCESS_TOKEN'], 'Authorization' ) )->request( $url, null, 'POST' );
 
 				if ( wp_remote_retrieve_response_code( $response ) !== 204 ) {
 					exit(json_decode( wp_remote_retrieve_body( $response ), true )['message']);
@@ -136,32 +136,30 @@ class Tremendous {
 		/**
 		 * Build the request to Tremendous
 		 */
-
-		$product = get_option('foodtec_tremendous_products');
 		$funding_source = get_option('foodtec_tremendous_funding_sources');
-		$product = explode(',',$product);
-        $data_to_send_api = json_encode(array(
-            'payment' => array(
-                'method' => 'balance',
-                'funding_source_id' => $funding_source,
-            ),
-            'rewards' => array(
-                array(
-                    'value' => array(
-                        'denomination' => $chosenProduct->displayName,
-                    ),
-                    'delivery' => array(
-                        'method' => 'EMAIL',
-                    ),
-                    'recipient' => array(
-                        'name'=> $params['account']->name,
-                        'email'=> $params['account']->email,
-                    ),
-                    'products' => $product,
-                ),
-            ),
-
-        ));
+		$product = explode(',',get_option('foodtec_tremendous_products'));
+        	$data_to_send_api = json_encode(array(
+	            'payment' => array(
+	                'method' => 'balance',
+	                'funding_source_id' => $funding_source,
+	            ),
+	            'rewards' => array(
+	                array(
+	                    'value' => array(
+	                        'denomination' => $chosenProduct->displayName,
+	                    ),
+	                    'delivery' => array(
+	                        'method' => 'EMAIL',
+	                    ),
+	                    'recipient' => array(
+	                        'name'=> $params['account']->name,
+	                        'email'=> $params['account']->email,
+	                    ),
+	                    'products' => $product,
+	                ),
+	            ),
+	
+	        ));
 
 		$token = get_option('foodtec_tremendous_key');
         $url = get_option('foodtec_tremendous_url');
